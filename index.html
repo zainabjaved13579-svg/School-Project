@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Late Record System</title>
+<style>
+body { font-family:"Poppins",sans-serif; margin:0; background:linear-gradient(135deg,#a8dadc,#f1faee);}
+#deviceModal {position:fixed; inset:0; background:#bbdefb; display:flex; justify-content:center; align-items:center; z-index:1000;}
+#deviceModal div {background:white; padding:25px; border-radius:10px; box-shadow:0 0 10px #0004; text-align:center;}
+#deviceModal button {padding:10px 20px;margin:10px;border:none;border-radius:6px;background:#1565c0;color:white;cursor:pointer;}
+#deviceModal button:hover{background:#0d47a1;}
+#loginScreen {position:fixed; inset:0; background:#bbdefb; display:flex; justify-content:center; align-items:center; z-index:999; display:none;}
+#loginBox {background:white; padding:25px; border-radius:10px; box-shadow:0 0 10px #0004; text-align:center;}
+#loginBox input {width:150px;padding:10px;margin:5px;border-radius:5px;border:1px solid #0277bd;}
+header{text-align:center;background:#1976d2;padding:20px;color:white;font-size:28px;box-shadow:0 3px 10px #0003;}
+marquee{background:#0d47a1;color:white;padding:8px;font-weight:600;margin-bottom:15px;}
+.container{padding:20px; max-width:900px; margin:auto;}
+input{padding:10px;margin:5px;border-radius:6px;border:1px solid #0277bd; outline:none;}
+button.action{padding:10px 15px;background:#1565c0;border:none;color:white;cursor:pointer;border-radius:6px;margin-top:5px;}
+button.action:hover{background:#0d47a1;}
+#errorMsg{color:red;font-weight:bold;margin-top:10px; min-height:20px;}
+table{width:100%;border-collapse: collapse; background:white; margin-top:15px; border-radius:8px; overflow:hidden;}
+th{background:#1976d2;color:white;padding:12px;}
+td{padding:10px;border:1px solid #90caf9; text-align:center;}
+#latePanel{position:fixed; top:0; right:-400px; width:350px; height:100%; background:#e1f5fe; box-shadow:-4px 0 12px #0004; padding:20px; transition:0.4s;}
+#closeAlert{float:right; cursor:pointer; color:red; font-size:20px;}
+.alertCard{border-left:5px solid #0d47a1; background:white; padding:12px; margin:10px 0; border-radius:6px;}
+
+/* MOBILE INTERFACE */
+#mobileView .inputsMobile { display:flex; flex-direction:column; }
+#mobileView input { font-size:18px; padding:15px; }
+#mobileView button.action { padding:15px; font-size:18px; }
+
+/* PC INTERFACE */
+#pcView .inputsPC { display:flex; flex-wrap:wrap; gap:10px; }
+#pcView input { width: calc(50% - 10px); padding:10px; }
+#pcView button.action { width:150px; }
+
+/* RESPONSIVE */
+@media screen and (max-width:600px){
+    #pcView input{width:100%;}
+    table, th, td{font-size:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- DEVICE SELECT -->
+<div id="deviceModal">
+    <div>
+        <h2>Select Device Interface</h2>
+        <button onclick="selectDevice('mobile')">📱 Mobile</button>
+        <button onclick="selectDevice('pc')">💻 PC</button>
+    </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <div id="loginBox">
+        <h2>Enter Password</h2>
+        <input type="password" id="loginPass" placeholder="Password"><br><br>
+        <button id="loginBtn">Login</button>
+        <p id="loginError"></p>
+    </div>
+</div>
+
+<header>School Late Record System</header>
+<marquee behavior="scroll" direction="left">Fill these records properly with verification and don’t do writing error</marquee>
+
+<!-- MOBILE VIEW -->
+<div class="container" id="mobileView" style="display:none;">
+    <div class="inputsMobile">
+        <input id="name" placeholder="Student Name">
+        <input id="lastName" placeholder="Last Name">
+        <input id="classNo" placeholder="Class">
+        <input id="section" placeholder="Section">
+        <button class="action" onclick="addStudent()">Add</button>
+        <button class="action" onclick="resetData()">Reset All Records</button>
+        <p id="errorMsg"></p>
+    </div>
+    <button class="action" onclick="openAlerts()">Late Alerts</button>
+    <h3>Students List</h3>
+    <table id="studentTable">
+        <tr><th>Name</th><th>Last Name</th><th>Class</th><th>Section</th><th>Late Count</th></tr>
+    </table>
+</div>
+
+<!-- PC VIEW -->
+<div class="container" id="pcView" style="display:none;">
+    <div class="inputsPC">
+        <input id="namePC" placeholder="Student Name">
+        <input id="lastNamePC" placeholder="Last Name">
+        <input id="classNoPC" placeholder="Class">
+        <input id="sectionPC" placeholder="Section">
+        <button class="action" onclick="addStudent()">Add</button>
+        <button class="action" onclick="resetData()">Reset All Records</button>
+        <p id="errorMsgPC"></p>
+    </div>
+    <button class="action" onclick="openAlerts()">Late Alerts</button>
+    <h3>Students List</h3>
+    <table id="studentTablePC">
+        <tr><th>Name</th><th>Last Name</th><th>Class</th><th>Section</th><th>Late Count</th></tr>
+    </table>
+</div>
+
+<!-- LATE PANEL -->
+<div id="latePanel">
+    <span id="closeAlert" onclick="closeAlerts()">❌</span>
+    <h2>Late Alerts</h2>
+    <div id="alertList"></div>
+</div>
+
+<script>
+// DEVICE SELECT
+let currentDevice = '';
+function selectDevice(dev){
+    currentDevice = dev;
+    document.getElementById('deviceModal').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+}
+
+// LOGIN
+const loginBtn = document.getElementById("loginBtn");
+const loginScreen = document.getElementById("loginScreen");
+const loginError = document.getElementById("loginError");
+loginBtn.addEventListener("click", ()=>{
+    const val = document.getElementById("loginPass").value;
+    if(val==="048840"){
+        loginScreen.style.display="none";
+        if(currentDevice==='mobile') document.getElementById("mobileView").style.display='block';
+        else document.getElementById("pcView").style.display='block';
+    } else loginError.innerText="❌ Wrong Password!";
+});
+
+// Data
+let students = JSON.parse(localStorage.getItem("students") || "[]");
+
+function getInputs(){
+    if(currentDevice==='mobile'){
+        return { 
+            name: document.getElementById("name"), 
+            lastName: document.getElementById("lastName"), 
+            classNo: document.getElementById("classNo"), 
+            section: document.getElementById("section"), 
+            errorMsg: document.getElementById("errorMsg"), 
+            table: document.getElementById("studentTable") 
+        }
+    } else {
+        return { 
+            name: document.getElementById("namePC"), 
+            lastName: document.getElementById("lastNamePC"), 
+            classNo: document.getElementById("classNoPC"), 
+            section: document.getElementById("sectionPC"), 
+            errorMsg: document.getElementById("errorMsgPC"), 
+            table: document.getElementById("studentTablePC") 
+        }
+    }
+}
+
+function validateInputs(inp){
+    const n = inp.name.value.trim();
+    const f = inp.lastName.value.trim();
+    const c = inp.classNo.value.trim();
+    const s = inp.section.value.trim();
+    if(!/^[a-z]+$/.test(n)){ inp.errorMsg.innerText="❌ Student Name: lowercase letters only, no spaces"; return false;}
+    if(!/^[a-z]+$/.test(f)){ inp.errorMsg.innerText="❌ Last Name: lowercase letters only, no spaces"; return false;}
+    if(!/^[0-9]+$/.test(c)){ inp.errorMsg.innerText="❌ Class: numbers only, no spaces"; return false;}
+    if(!/^[A-Z]$/.test(s)){ inp.errorMsg.innerText="❌ Section: 1 capital letter only"; return false;}
+    inp.errorMsg.innerText="";
+    return true;
+}
+
+function addStudent(){
+    const inp = getInputs();
+    if(!validateInputs(inp)) return;
+    const n=inp.name.value.trim(), f=inp.lastName.value.trim(), c=inp.classNo.value.trim(), s=inp.section.value.trim();
+    const found = students.find(x=>x.name===n && x.lastName===f && x.classNo===c && x.section===s);
+    if(found) found.late++;
+    else students.push({name:n,lastName:f,classNo:c,section:s,late:1});
+    localStorage.setItem("students", JSON.stringify(students));
+    renderTable();
+    inp.name.value=""; inp.lastName.value=""; inp.classNo.value=""; inp.section.value="";
+}
+
+function renderTable(){
+    const tableMobile = document.getElementById("studentTable");
+    const tablePC = document.getElementById("studentTablePC");
+    const html = students.map(s=>`<tr><td>${s.name}</td><td>${s.lastName}</td><td>${s.classNo}</td><td>${s.section}</td><td>${s.late}</td></tr>`).join('');
+    tableMobile.innerHTML=`<tr><th>Name</th><th>Last Name</th><th>Class</th><th>Section</th><th>Late Count</th></tr>${html}`;
+    tablePC.innerHTML=`<tr><th>Name</th><th>Last Name</th><th>Class</th><th>Section</th><th>Late Count</th></tr>${html}`;
+}
+
+function openAlerts(){
+    const list = document.getElementById("alertList");
+    list.innerHTML="";
+    students.filter(s=>s.late>=3).forEach(s=>{
+        list.innerHTML+=`<div class="alertCard"><b>${s.name}</b> - More than 3 days late<br><br>
+        <button onclick="deleteStudent('${s.name}','${s.lastName}','${s.classNo}','${s.section}')">Delete</button></div>`;
+    });
+    document.getElementById("latePanel").style.right="0px";
+}
+
+function closeAlerts(){ document.getElementById("latePanel").style.right="-400px"; }
+
+function deleteStudent(n,f,c,s){
+    students=students.filter(x=>!(x.name===n && x.lastName===f && x.classNo===c && x.section===s));
+    localStorage.setItem("students",JSON.stringify(students));
+    renderTable();
+    openAlerts();
+}
+
+// RESET FUNCTION WITH PASSWORD
+function resetData(){
+    const pass = prompt("🔒 Enter password to reset all records:");
+    if(pass === "campus32"){
+        if(confirm("⚠️ Are you sure you want to clear all records? This cannot be undone.")){
+            students = [];
+            localStorage.removeItem("students");
+            renderTable();
+            closeAlerts();
+            alert("✅ All records have been cleared!");
+        }
+    } else {
+        alert("❌ Wrong password! Records not cleared.");
+    }
+}
+
+renderTable();
+</script>
+<footer>Made by Zainab javed </footer>
+</body>
+</html>
